@@ -54,7 +54,50 @@ namespace {
 
 	std::vector<int> convolution(std::vector<int>& image, const int width, const std::vector<int>& mask, const int widthMask)
 	{
-		// TODO
+		std::vector<int> result;
+		// Vérifie que la taille de l'image est un multiple de la largeur de l'image
+		if (image.size() % width != 0)
+		{
+			std::cerr << "Error: image width is not a multiple of the image size" << std::endl;
+			return result;
+		}
+		// Vérifie que la taille du masque est un multiple de la largeur du masque
+		if (mask.size() % widthMask != 0)
+		{
+			std::cerr << "Error: mask width is not a multiple of the mask size" << std::endl;
+			return result;
+		}
+		// Parcours de l'image
+		for (int i = 0; i < image.size(); i++)
+		{
+			int sum = 0;
+			// Parcours du masque
+			for (int j = 0; j < mask.size(); j++)
+			{
+				// Calcul de la position de l'élément du masque
+				int x = i % width + j % widthMask - widthMask / 2;
+				int y = i / width + j / widthMask - widthMask / 2;
+				// Vérifie que la position est dans l'image
+				if (x >= 0 && x < width && y >= 0 && y < image.size() / width)
+				{
+					// Calcul de la position de l'élément du masque dans l'image
+					int pos = x + y * width;
+					// Calcul de la convolution si le pixel est dans l'image
+					sum += mask[j] * image[pos];
+				}
+			}
+			// On vérifie que le pixel est dans l'intervalle [0, 255]
+			if (sum < 0)
+			{
+				sum = 0;
+			}
+			else if (sum > 255)
+			{
+				sum = 255;
+			}
+			result.push_back(sum);
+		}
+		return result;
 	}
 
 } // namespace
