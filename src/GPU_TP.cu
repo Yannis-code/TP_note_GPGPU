@@ -14,7 +14,7 @@ __global__ void nx2_plus_ny()
 
 } // namespace
 
-void nx2_plus_ny_GPU()
+void runOnGPU()
 {
 	// TODO
 }

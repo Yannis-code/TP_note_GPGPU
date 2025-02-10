@@ -4,8 +4,6 @@
 
 int main(int, char*[])
 {
-	//nx2_plus_ny_GPU();
-	//check_prime_glob_GPU();
-	check_prime_shrd_GPU();
+	runOnCPU();
 	return 0;
 }
