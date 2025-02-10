@@ -4,6 +4,7 @@
 #include <cuda_runtime.h>
 
 #include <iostream>
+#include <iomanip>
 #include <vector>
 
 namespace {
@@ -11,4 +12,6 @@ namespace {
 	std::vector<int> convolution(std::vector<int>& image, const int width, const std::vector<int>& mask, const int widthMask);
 } // namespace
 
-void runOnGPU();
+void runOnGPU_GREY();
+
+void runOnGPU_RGB();

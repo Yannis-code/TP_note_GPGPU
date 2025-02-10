@@ -2,54 +2,51 @@
 #include "CPU_TP.hpp"
 
 namespace {
-	void convolution(std::vector<char>& image, const int width, const std::vector<char>& mask, const int widthMask)
+	std::vector<unsigned char> convolution(std::vector<unsigned char>& image, const int width, const std::vector<char>& mask, const int widthMask)
 	{
+		std::vector<unsigned char> result;
 		// Vérifie que la taille de l'image est un multiple de la largeur de l'image
 		if (image.size() % width != 0)
 		{
 			std::cerr << "Error: image width is not a multiple of the image size" << std::endl;
-			return;
+			return result;
 		}
-
 		// Vérifie que la taille du masque est un multiple de la largeur du masque
 		if (mask.size() % widthMask != 0)
 		{
 			std::cerr << "Error: mask width is not a multiple of the mask size" << std::endl;
-			return;
+			return result;
 		}
 
+		int height = image.size() / width;
+		int heightMask = mask.size() / widthMask;
+
 		// Parcours de l'image
-		for (int i = 0; i < image.size(); i++)
+		for (int i = 0; i < height; i++)
 		{
-			// Parcours du masque
-			for (int j = 0; j < mask.size(); j++)
+			for (int j = 0; j < width; j++)
 			{
-				// Calcul de la position de l'élément du masque
-				int x = i % width + j % widthMask - widthMask / 2;
-				int y = i / width + j / widthMask - widthMask / 2;
-				// Vérifie que la position est dans l'image
-				if (x >= 0 && x < width && y >= 0 && y < image.size() / width)
+				// Initialisation de la valeur du pixel
+				int value = 0;
+				// Parcours du masque
+				for (int k = 0; k < heightMask; k++)
 				{
-					// Calcul de la position de l'élément du masque dans l'image
-					int pos = x + y * width;
-					// Calcul de la convolution si le pixel est dans l'image
-					image[i] += mask[j] * image[pos];
+					for (int l = 0; l < widthMask; l++)
+					{
+						int idMask = k * widthMask + l;
+						int shift = widthMask / 2;
+						int idImg = (i + k - shift) * width + (j + l - shift);
+						if ((i + k - shift) >= 0 && (i + k - shift) < height && (j + l - shift) >= 0 && (j + l - shift) < width)
+						{
+							value += image[idImg] * mask[idMask];
+						}
+					}
 				}
-				else {
-					// Sinon, on met le pixel à 0
-					image[i] = 0;
-				}
-				// On vérifie que le pixel est dans l'intervalle [0, 255]
-				if (image[i] < 0)
-				{
-					image[i] = 0;
-				}
-				else if (image[i] > 255)
-				{
-					image[i] = 255;
-				}
+				// Ajout de la valeur du pixel dans le résultat
+				result.push_back(value);
 			}
 		}
+		return result;
 	}
 
 	std::vector<int> convolution(std::vector<int>& image, const int width, const std::vector<int>& mask, const int widthMask)
@@ -67,86 +64,142 @@ namespace {
 			std::cerr << "Error: mask width is not a multiple of the mask size" << std::endl;
 			return result;
 		}
+
+		int height = image.size() / width;
+		int heightMask = mask.size() / widthMask;
+
 		// Parcours de l'image
-		for (int i = 0; i < image.size(); i++)
+		for (int i = 0; i < height; i++)
 		{
-			int sum = 0;
-			// Parcours du masque
-			for (int j = 0; j < mask.size(); j++)
+			for (int j = 0; j < width; j++)
 			{
-				// Calcul de la position de l'élément du masque
-				int x = i % width + j % widthMask - widthMask / 2;
-				int y = i / width + j / widthMask - widthMask / 2;
-				// Vérifie que la position est dans l'image
-				if (x >= 0 && x < width && y >= 0 && y < image.size() / width)
+				// Initialisation de la valeur du pixel
+				unsigned char R = 0, G = 0, B = 0;
+				// Parcours du masque
+				for (int k = 0; k < heightMask; k++)
 				{
-					// Calcul de la position de l'élément du masque dans l'image
-					int pos = x + y * width;
-					// Calcul de la convolution si le pixel est dans l'image
-					sum += mask[j] * image[pos];
+					for (int l = 0; l < widthMask; l++)
+					{
+						int idMask = k * widthMask + l;
+						int shift = widthMask / 2;
+						int idImg = (i + k - shift) * width + (j + l - shift);
+						if ((i + k - shift) >= 0 && (i + k - shift) < height && (j + l - shift) >= 0 && (j + l - shift) < width)
+						{
+							R += (image[idImg] >> 24) & 0xFF * mask[idMask];
+							G += (image[idImg] >> 16) & 0xFF * mask[idMask];
+							B += (image[idImg] >> 8) & 0xFF * mask[idMask];
+						}
+					}
 				}
+				int value = (R << 24) | (G << 16) | (B << 8);
+				// Ajout de la valeur du pixel dans le résultat
+				result.push_back(value);
 			}
-			// On vérifie que le pixel est dans l'intervalle [0, 255]
-			if (sum < 0)
-			{
-				sum = 0;
-			}
-			else if (sum > 255)
-			{
-				sum = 255;
-			}
-			result.push_back(sum);
 		}
 		return result;
 	}
 
 } // namespace
 
-void runOnCPU()
+void runOnCPU_GREY()
 {
 	int imageWidth, imageHeight, maskWidth, maskHeight;
 	std::cout << "Enter the image width: ";
 	std::cin >> imageWidth;
 	std::cout << "Enter the image height: ";
 	std::cin >> imageHeight;
-	std::cout << "Enter the mask width: ";
-	std::cin >> maskWidth;
-	std::cout << "Enter the mask height: ";
-	std::cin >> maskHeight;
 
-	std::vector<char> image;
-	// Initialisation de l'image à i % 255
+	std::vector<unsigned char> image;
+	// Initialisation de l'image à i % 255 pour les 3 canaux RGB
 	for (int i = 0; i < imageWidth * imageHeight; i++)
 	{
-		image.push_back(i % 255);
+		image.push_back(i);
 	}
 
 	// Affichage de l'image le premier carré de 5x5 pixels de l'image
-	for (int i = 0; i < 5; i++)
+	std::cout << "Image before convolution: " << std::endl;
+	for (int i = 0; i < 10; i++)
 	{
-		for (int j = 0; j < 5; j++)
+		for (int j = 0; j < 10; j++)
 		{
-			std::cout << (int)image[i * imageWidth + j] << " ";
+			std::cout << std::setw(3) << (int)image[i * imageWidth + j] << " ";
 		}
 		std::cout << std::endl;
 	}
 
 	// Masque
+	maskWidth = maskHeight = 3;
 	std::vector<char> mask = {
-		1, 2, 1,
-		2, 4, 2,
-		1, 2, 1
+		1, 0, 0,
+		0, 0, 0,
+		0, 0, 0
 	};
 
 	// Convolution
-	convolution(image, 5, mask, 3);
+	std::vector<unsigned char> result = convolution(image, imageWidth, mask, maskWidth);
+	std::cout << "Result size: " << result.size() << std::endl;
 
 	// Affichage de l'image le premier carré de 5x5 pixels de l'image
+	std::cout << "Image after convolution: " << std::endl;
+	for (int i = 0; i < 10; i++)
+	{
+		for (int j = 0; j < 10; j++)
+		{
+			std::cout << std::setw(3) << (int)result[i * imageWidth + j] << " ";
+		}
+		std::cout << std::endl;
+	}
+}
+
+void runOnCPU_RGB()
+{
+	int imageWidth, imageHeight, maskWidth, maskHeight;
+	std::cout << "Enter the image width: ";
+	std::cin >> imageWidth;
+	std::cout << "Enter the image height: ";
+	std::cin >> imageHeight;
+
+	std::vector<int> image;
+	// Initialisation de l'image à i % 255 pour les 3 canaux RGB
+	for (int i = 0; i < imageWidth * imageHeight; i++)
+	{
+		image.push_back((i << 24) | (i << 16) | (i << 8));
+	}
+
+	// Affichage de l'image le premier carré de 5x5 pixels canal par canal
+	std::cout << "Image after convolution: " << std::endl;
 	for (int i = 0; i < 5; i++)
 	{
 		for (int j = 0; j < 5; j++)
 		{
-			std::cout << (int)image[i * imageWidth + j] << " ";
+			std::cout << std::setw(3) << (int)((image[i * imageWidth + j] >> 24) & 0xFF) << "|";
+			std::cout << std::setw(3) << (int)((image[i * imageWidth + j] >> 16) & 0xFF) << "|";
+			std::cout << std::setw(3) << (int)((image[i * imageWidth + j] >> 8) & 0xFF) << "\t";
+		}
+		std::cout << std::endl;
+	}
+
+	// Masque
+	maskWidth = maskHeight = 3;
+	std::vector<int> mask = {
+		1, 0, 0,
+		0, 0, 0,
+		0, 0, 0
+	};
+
+	// Convolution
+	std::vector<int> result = convolution(image, imageWidth, mask, maskWidth);
+	std::cout << "Result size: " << result.size() << std::endl;
+
+	// Affichage de l'image le premier carré de 5x5 pixels canal par canal
+	std::cout << "Image after convolution: " << std::endl;
+	for (int i = 0; i < 5; i++)
+	{
+		for (int j = 0; j < 5; j++)
+		{
+			std::cout << std::setw(3) << (int)((result[i * imageWidth + j] >> 24) & 0xFF) << "|";
+			std::cout << std::setw(3) << (int)((result[i * imageWidth + j] >> 16) & 0xFF) << "|";
+			std::cout << std::setw(3) << (int)((result[i * imageWidth + j] >> 8) & 0xFF) << "\t";
 		}
 		std::cout << std::endl;
 	}
