@@ -171,9 +171,9 @@ namespace {
 		gpuErrchk(cudaMemcpy(result.data(), outImage, width * height * sizeof(unsigned char), cudaMemcpyDeviceToHost));
 
 		// Libération de la mémoire
-		cudaFree(inImage);
-		cudaFree(outImage);
-		cudaFree(inMask);
+		gpuErrchk(cudaFree(inImage));
+		gpuErrchk(cudaFree(outImage));
+		gpuErrchk(cudaFree(inMask));
 
 		return result;
 	}
@@ -233,9 +233,9 @@ namespace {
 		gpuErrchk(cudaMemcpy(result.data(), outImage, width * height * sizeof(unsigned int), cudaMemcpyDeviceToHost));
 
 		// Libération de la mémoire
-		cudaFree(inImage);
-		cudaFree(outImage);
-		cudaFree(inMask);
+		gpuErrchk(cudaFree(inImage));
+		gpuErrchk(cudaFree(outImage));
+		gpuErrchk(cudaFree(inMask));
 
 		return result;
 	}
