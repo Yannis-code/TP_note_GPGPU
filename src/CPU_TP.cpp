@@ -1,15 +1,7 @@
 
 #include "CPU_TP.hpp"
 
-namespace {
-	/* Fonction de convolution d'une image en niveau de gris sur CPU
-	 * @param image: image à traiter
-	 * @param width: largeur de l'image
-	 * @param mask: masque de convolution
-	 * @param widthMask: largeur du masque
-	 * @return image après convolution
-	 * @note L'overflow n'est pas géré
-	*/
+namespace CPU_TP {
 	std::vector<unsigned char> convolution(std::vector<unsigned char>& image, const int width, const std::vector<char>& mask, const int widthMask)
 	{
 		std::vector<unsigned char> result;
@@ -57,15 +49,6 @@ namespace {
 		return result;
 	}
 
-	/* Fonction de convolution d'une image en couleur sur CPU
-	 * @param image: image à traiter
-	 * @param width: largeur de l'image
-	 * @param mask: masque de convolution
-	 * @param widthMask: largeur du masque
-	 * @return image après convolution
-	 * @note Les canaux RGB sont traités séparément
-	 * @note L'overflow n'est pas géré
-	 */
 	std::vector<int> convolution(std::vector<int>& image, const int width, const std::vector<int>& mask, const int widthMask)
 	{
 		std::vector<int> result;
@@ -119,8 +102,7 @@ namespace {
 		}
 		return result;
 	}
-
-} // namespace
+} // namespace CPU_TP
 
 void runOnCPU_GREY()
 {
@@ -157,7 +139,7 @@ void runOnCPU_GREY()
 	};
 
 	// Convolution
-	std::vector<unsigned char> result = convolution(image, imageWidth, mask, maskWidth);
+	std::vector<unsigned char> result = CPU_TP::convolution(image, imageWidth, mask, maskWidth);
 	std::cout << "Result size: " << result.size() << std::endl;
 
 	// Affichage de l'image le premier carré de 5x5 pixels de l'image
@@ -209,7 +191,7 @@ void runOnCPU_RGB()
 	};
 
 	// Convolution
-	std::vector<int> result = convolution(image, imageWidth, mask, maskWidth);
+	std::vector<int> result = CPU_TP::convolution(image, imageWidth, mask, maskWidth);
 	std::cout << "Result size: " << result.size() << std::endl;
 
 	// Affichage de l'image le premier carré de 5x5 pixels canal par canal

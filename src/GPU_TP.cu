@@ -1,7 +1,7 @@
 
 #include "GPU_TP.hpp"
 
-namespace {
+namespace GPU_TP {
 
 	/* Kernel de convolution en niveaux de gris sur GPU
 	* @param InImg: image d'entrée
@@ -115,12 +115,6 @@ namespace {
 		}
 	}
 
-	/* Fonction de convolution en niveaux de gris sur GPU
-	* @param image: image d'entrée
-	* @param width: largeur de l'image
-	* @param mask: masque de convolution
-	* @param widthMask: largeur du masque
-	*/
 	std::vector<unsigned char> convolution(std::vector<unsigned char>& image, const int width, const std::vector<char>& mask, const int widthMask)
 	{
 		std::vector<unsigned char> result(image.size(), 0);
@@ -178,12 +172,6 @@ namespace {
 		return result;
 	}
 
-	/* Fonction de convolution en niveaux de gris sur GPU
-	* @param image: image d'entrée
-	* @param width: largeur de l'image
-	* @param mask: masque de convolution
-	* @param widthMask: largeur du masque
-	*/
 	std::vector<int> convolution(std::vector<int>& image, const int width, const std::vector<int>& mask, const int widthMask)
 	{
 		std::vector<int> result(image.size(), 0);
@@ -240,7 +228,7 @@ namespace {
 		return result;
 	}
 
-} // namespace
+} // namespace GPU_TP
 
 void runOnGPU_GREY()
 {
@@ -277,7 +265,7 @@ void runOnGPU_GREY()
 	};
 
 	// Convolution
-	std::vector<unsigned char> result = convolution(image, imageWidth, mask, maskWidth);
+	std::vector<unsigned char> result = GPU_TP::convolution(image, imageWidth, mask, maskWidth);
 	std::cout << "Result size: " << result.size() << std::endl;
 
 	// Affichage de l'image le premier carré de 5x5 pixels de l'image
@@ -329,7 +317,7 @@ void runOnGPU_RGB()
 	};
 
 	// Convolution
-	std::vector<int> result = convolution(image, imageWidth, mask, maskWidth);
+	std::vector<int> result = GPU_TP::convolution(image, imageWidth, mask, maskWidth);
 	std::cout << "Result size: " << result.size() << std::endl;
 
 	// Affichage de l'image le premier carré de 5x5 pixels canal par canal
