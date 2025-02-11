@@ -3,6 +3,17 @@
 
 namespace {
 
+	/* Kernel de convolution en niveaux de gris sur GPU
+	* @param InImg: image d'entrée
+	* @param OutImg: image de sortie
+	* @param ImgWidth: largeur de l'image
+	* @param ImgHeight: hauteur de l'image
+	* @param Mask: masque de convolution
+	* @param MaskWidth: largeur du masque
+	* @param MaskHeight: hauteur du masque
+	* @note: le masque est copié dans la mémoire partagée
+	* @note: L'overflow n'est pas géré
+	*/
 	__global__ void convolution(unsigned char* InImg, unsigned char* OutImg, int ImgWidth, int ImgHeight, char* Mask, int MaskWidth, int MaskHeight)
 	{
 		int idX =
@@ -42,6 +53,17 @@ namespace {
 		}
 	}
 
+	/* Kernel de convolution en niveaux de gris sur GPU
+	* @param InImg: image d'entrée
+	* @param OutImg: image de sortie
+	* @param ImgWidth: largeur de l'image
+	* @param ImgHeight: hauteur de l'image
+	* @param Mask: masque de convolution
+	* @param MaskWidth: largeur du masque
+	* @param MaskHeight: hauteur du masque
+	* @note: le masque est copié dans la mémoire partagée
+	* @note: L'overflow n'est pas géré
+	*/
 	__global__ void convolution(int* InImg, int* OutImg, int ImgWidth, int ImgHeight, int* Mask, int MaskWidth, int MaskHeight)
 	{
 		int idX =
@@ -93,6 +115,12 @@ namespace {
 		}
 	}
 
+	/* Fonction de convolution en niveaux de gris sur GPU
+	* @param image: image d'entrée
+	* @param width: largeur de l'image
+	* @param mask: masque de convolution
+	* @param widthMask: largeur du masque
+	*/
 	std::vector<unsigned char> convolution(std::vector<unsigned char>& image, const int width, const std::vector<char>& mask, const int widthMask)
 	{
 		std::vector<unsigned char> result(image.size(), 0);
@@ -150,6 +178,12 @@ namespace {
 		return result;
 	}
 
+	/* Fonction de convolution en niveaux de gris sur GPU
+	* @param image: image d'entrée
+	* @param width: largeur de l'image
+	* @param mask: masque de convolution
+	* @param widthMask: largeur du masque
+	*/
 	std::vector<int> convolution(std::vector<int>& image, const int width, const std::vector<int>& mask, const int widthMask)
 	{
 		std::vector<int> result(image.size(), 0);
