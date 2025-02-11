@@ -5,13 +5,13 @@ namespace {
 	std::vector<unsigned char> convolution(std::vector<unsigned char>& image, const int width, const std::vector<char>& mask, const int widthMask)
 	{
 		std::vector<unsigned char> result;
-		// Vérifie que la taille de l'image est un multiple de la largeur de l'image
+		// VÃ©rifie que la taille de l'image est un multiple de la largeur de l'image
 		if (image.size() % width != 0)
 		{
 			std::cerr << "Error: image width is not a multiple of the image size" << std::endl;
 			return result;
 		}
-		// Vérifie que la taille du masque est un multiple de la largeur du masque
+		// VÃ©rifie que la taille du masque est un multiple de la largeur du masque
 		if (mask.size() % widthMask != 0)
 		{
 			std::cerr << "Error: mask width is not a multiple of the mask size" << std::endl;
@@ -42,7 +42,7 @@ namespace {
 						}
 					}
 				}
-				// Ajout de la valeur du pixel dans le résultat
+				// Ajout de la valeur du pixel dans le rÃ©sultat
 				result.push_back(value);
 			}
 		}
@@ -52,13 +52,13 @@ namespace {
 	std::vector<int> convolution(std::vector<int>& image, const int width, const std::vector<int>& mask, const int widthMask)
 	{
 		std::vector<int> result;
-		// Vérifie que la taille de l'image est un multiple de la largeur de l'image
+		// VÃ©rifie que la taille de l'image est un multiple de la largeur de l'image
 		if (image.size() % width != 0)
 		{
 			std::cerr << "Error: image width is not a multiple of the image size" << std::endl;
 			return result;
 		}
-		// Vérifie que la taille du masque est un multiple de la largeur du masque
+		// VÃ©rifie que la taille du masque est un multiple de la largeur du masque
 		if (mask.size() % widthMask != 0)
 		{
 			std::cerr << "Error: mask width is not a multiple of the mask size" << std::endl;
@@ -85,14 +85,18 @@ namespace {
 						int idImg = (i + k - shift) * width + (j + l - shift);
 						if ((i + k - shift) >= 0 && (i + k - shift) < height && (j + l - shift) >= 0 && (j + l - shift) < width)
 						{
-							R += (image[idImg] >> 24) & 0xFF * mask[idMask];
-							G += (image[idImg] >> 16) & 0xFF * mask[idMask];
-							B += (image[idImg] >> 8) & 0xFF * mask[idMask];
+							unsigned char maskR = (mask[idMask] >> 24) & 0xFF;
+							unsigned char maskG = (mask[idMask] >> 16) & 0xFF;
+							unsigned char maskB = (mask[idMask] >> 8) & 0xFF;
+
+							R += ((image[idImg] >> 24) & 0xFF) * maskR;
+							G += ((image[idImg] >> 16) & 0xFF) * maskG;
+							B += ((image[idImg] >> 8) & 0xFF) * maskB;
 						}
 					}
 				}
 				int value = (R << 24) | (G << 16) | (B << 8);
-				// Ajout de la valeur du pixel dans le résultat
+				// Ajout de la valeur du pixel dans le rÃ©sultat
 				result.push_back(value);
 			}
 		}
@@ -103,20 +107,20 @@ namespace {
 
 void runOnCPU_GREY()
 {
-	int imageWidth, imageHeight, maskWidth, maskHeight;
+	int imageWidth, imageHeight, maskWidth;
 	std::cout << "Enter the image width: ";
 	std::cin >> imageWidth;
 	std::cout << "Enter the image height: ";
 	std::cin >> imageHeight;
 
 	std::vector<unsigned char> image;
-	// Initialisation de l'image à i % 255 pour les 3 canaux RGB
+	// Initialisation de l'image Ã  i % 255 pour les 3 canaux RGB
 	for (int i = 0; i < imageWidth * imageHeight; i++)
 	{
 		image.push_back(i);
 	}
 
-	// Affichage de l'image le premier carré de 5x5 pixels de l'image
+	// Affichage de l'image le premier carrÃ© de 5x5 pixels de l'image
 	std::cout << "Image before convolution: " << std::endl;
 	for (int i = 0; i < 10; i++)
 	{
@@ -128,7 +132,7 @@ void runOnCPU_GREY()
 	}
 
 	// Masque
-	maskWidth = maskHeight = 3;
+	maskWidth = 3;
 	std::vector<char> mask = {
 		1, 0, 0,
 		0, 0, 0,
@@ -139,7 +143,7 @@ void runOnCPU_GREY()
 	std::vector<unsigned char> result = convolution(image, imageWidth, mask, maskWidth);
 	std::cout << "Result size: " << result.size() << std::endl;
 
-	// Affichage de l'image le premier carré de 5x5 pixels de l'image
+	// Affichage de l'image le premier carrÃ© de 5x5 pixels de l'image
 	std::cout << "Image after convolution: " << std::endl;
 	for (int i = 0; i < 10; i++)
 	{
@@ -153,20 +157,20 @@ void runOnCPU_GREY()
 
 void runOnCPU_RGB()
 {
-	int imageWidth, imageHeight, maskWidth, maskHeight;
+	int imageWidth, imageHeight, maskWidth;
 	std::cout << "Enter the image width: ";
 	std::cin >> imageWidth;
 	std::cout << "Enter the image height: ";
 	std::cin >> imageHeight;
 
 	std::vector<int> image;
-	// Initialisation de l'image à i % 255 pour les 3 canaux RGB
+	// Initialisation de l'image Ã  i % 255 pour les 3 canaux RGB
 	for (int i = 0; i < imageWidth * imageHeight; i++)
 	{
 		image.push_back((i << 24) | (i << 16) | (i << 8));
 	}
 
-	// Affichage de l'image le premier carré de 5x5 pixels canal par canal
+	// Affichage de l'image le premier carrÃ© de 5x5 pixels canal par canal
 	std::cout << "Image after convolution: " << std::endl;
 	for (int i = 0; i < 5; i++)
 	{
@@ -180,9 +184,9 @@ void runOnCPU_RGB()
 	}
 
 	// Masque
-	maskWidth = maskHeight = 3;
+	maskWidth = 3;
 	std::vector<int> mask = {
-		1, 0, 0,
+		(1 << 24) | (1 << 16) | (1 << 8), 0, 0,
 		0, 0, 0,
 		0, 0, 0
 	};
@@ -191,7 +195,7 @@ void runOnCPU_RGB()
 	std::vector<int> result = convolution(image, imageWidth, mask, maskWidth);
 	std::cout << "Result size: " << result.size() << std::endl;
 
-	// Affichage de l'image le premier carré de 5x5 pixels canal par canal
+	// Affichage de l'image le premier carrÃ© de 5x5 pixels canal par canal
 	std::cout << "Image after convolution: " << std::endl;
 	for (int i = 0; i < 5; i++)
 	{

@@ -4,9 +4,9 @@
 
 int main(int, char*[])
 {
-	runOnCPU_GREY();
+	//runOnCPU_GREY();
 	runOnCPU_RGB();
 	//runOnGPU_GREY();
-	//runOnGPU_RBG();
+	runOnGPU_RGB();
 	return 0;
 }

@@ -15,7 +15,7 @@ namespace {
 
 		int idGlobal = idY * ImgWidth + idX;
 
-		// Copie du masque dans la mémoire partagée MaskWidth * MaskHeight
+		// Copie du masque dans la mÃ©moire partagÃ©e MaskWidth * MaskHeight
 		extern __shared__ char sharedMask[];
 		if (threadIdx.x < MaskWidth && threadIdx.y < MaskHeight)
 		{
@@ -54,16 +54,16 @@ namespace {
 
 		int idGlobal = idY * ImgWidth + idX;
 
-		// Copie du masque dans la mémoire partagée MaskWidth * MaskHeight
-		extern __shared__ char sharedMask[];
+		// Copie du masque dans la mÃ©moire partagÃ©e MaskWidth * MaskHeight
+		extern __shared__ int sharedMaskRgb[];
 		if (threadIdx.x < MaskWidth && threadIdx.y < MaskHeight)
 		{
-			sharedMask[threadIdx.y * MaskWidth + threadIdx.x] = Mask[threadIdx.y * MaskWidth + threadIdx.x];
+			sharedMaskRgb[threadIdx.y * MaskWidth + threadIdx.x] = Mask[threadIdx.y * MaskWidth + threadIdx.x];
 		}
 
 		__syncthreads();
 
-		// On vérifie que le pixel est dans l'image
+		// On vÃ©rifie que le pixel est dans l'image
 		if (idX < ImgWidth && idY < ImgHeight)
 		{
 			// Initialisation de la valeur du pixel
@@ -78,13 +78,17 @@ namespace {
 					int idImg = (idY + i - shift) * ImgWidth + (idX + j - shift);
 					if ((idY + i - shift) >= 0 && (idY + i - shift) < ImgHeight && (idX + j - shift) >= 0 && (idX + j - shift) < ImgWidth)
 					{
-						R += (InImg[idImg] >> 24) & 0xFF * sharedMask[idMask];
-						G += (InImg[idImg] >> 16) & 0xFF * sharedMask[idMask];
-						B += (InImg[idImg] >> 8) & 0xFF * sharedMask[idMask];
+						unsigned char maskR = (sharedMaskRgb[idMask] >> 24) & 0xFF;
+						unsigned char maskG = (sharedMaskRgb[idMask] >> 16) & 0xFF;
+						unsigned char maskB = (sharedMaskRgb[idMask] >> 8) & 0xFF;
+
+						R += ((InImg[idImg] >> 24) & 0xFF) * maskR;
+						G += ((InImg[idImg] >> 16) & 0xFF) * maskG;
+						B += ((InImg[idImg] >> 8) & 0xFF)  * maskB;
 					}
 				}
 			}
-			// Ajout de la valeur du pixel dans le résultat
+			// Ajout de la valeur du pixel dans le rÃ©sultat
 			OutImg[idGlobal] = (R << 24) | (G << 16) | (B << 8);
 		}
 	}
@@ -93,13 +97,13 @@ namespace {
 	{
 		std::vector<unsigned char> result(image.size(), 0);
 
-		// Vérifie que la taille de l'image est un multiple de la largeur de l'image
+		// VÃ©rifie que la taille de l'image est un multiple de la largeur de l'image
 		if (image.size() % width != 0)
 		{
 			std::cerr << "Error: image width is not a multiple of the image size" << std::endl;
 			return result;
 		}
-		// Vérifie que la taille du masque est un multiple de la largeur du masque
+		// VÃ©rifie que la taille du masque est un multiple de la largeur du masque
 		if (mask.size() % widthMask != 0)
 		{
 			std::cerr << "Error: mask width is not a multiple of the mask size" << std::endl;
@@ -108,78 +112,37 @@ namespace {
 
 		int height = image.size() / width;
 		int heightMask = mask.size() / widthMask;
-		cudaError_t err;
 
-		// Allocation de la mémoire sur le GPU
+		// Allocation de la mÃ©moire sur le GPU
 		unsigned char* inImage;
-		err = cudaMalloc(&inImage, width * height * sizeof(unsigned char));
-		if (err != cudaSuccess)
-		{
-			std::cerr << "Error: " << cudaGetErrorString(err) << std::endl;
-			return result;
-		}
+		gpuErrchk(cudaMalloc(&inImage, width * height * sizeof(unsigned char)));
 
 		unsigned char* outImage;
-		err = cudaMalloc(&outImage, width * height * sizeof(unsigned char));
-		if (err != cudaSuccess)
-		{
-			std::cerr << "Error: " << cudaGetErrorString(err) << std::endl;
-			return result;
-		}
+		gpuErrchk(cudaMalloc(&outImage, width * height * sizeof(unsigned char)));
 
-		// Initialisation de la mémoire sur le GPU à 0
-		err = cudaMemset(outImage, (unsigned char)0, width * height * sizeof(unsigned char));
-		if (err != cudaSuccess)
-		{
-			std::cerr << "Error: " << cudaGetErrorString(err) << std::endl;
-			return result;
-		}
+		// Initialisation de la mÃ©moire sur le GPU Ã  0
+		gpuErrchk(cudaMemset(outImage, (unsigned char)0, width * height * sizeof(unsigned char)));
 
 		char* inMask;
-		err = cudaMalloc(&inMask, widthMask * heightMask * sizeof(char));
-		if (err != cudaSuccess)
-		{
-			std::cerr << "Error: " << cudaGetErrorString(err) << std::endl;
-			return result;
-		}
+		gpuErrchk(cudaMalloc(&inMask, widthMask * heightMask * sizeof(char)));
 
-		// Copie des données sur le GPU
-		err = cudaMemcpy(inImage, image.data(), width * height * sizeof(unsigned char), cudaMemcpyHostToDevice);
-		if (err != cudaSuccess)
-		{
-			std::cerr << "Error: " << cudaGetErrorString(err) << std::endl;
-			return result;
-		}
+		// Copie des donnÃ©es sur le GPU
+		gpuErrchk(cudaMemcpy(inImage, image.data(), width * height * sizeof(unsigned char), cudaMemcpyHostToDevice));
 
-		err = cudaMemcpy(inMask, mask.data(), widthMask * heightMask * sizeof(unsigned char), cudaMemcpyHostToDevice);
-		if (err != cudaSuccess)
-		{
-			std::cerr << "Error: " << cudaGetErrorString(err) << std::endl;
-			return result;
-		}
+		gpuErrchk(cudaMemcpy(inMask, mask.data(), widthMask * heightMask * sizeof(unsigned char), cudaMemcpyHostToDevice));
 
 
-		// Définition de la taille des blocs et de la grille
+		// DÃ©finition de la taille des blocs et de la grille
 		dim3 threadsPerBlock(16, 16);
 		dim3 numBlocks((width + threadsPerBlock.x - 1) / threadsPerBlock.x, (height + threadsPerBlock.y - 1) / threadsPerBlock.y);
-		// Appel du kernel convolution avec la taille du masque en mémoire partagée
+		// Appel du kernel convolution avec la taille du masque en mÃ©moire partagÃ©e
 		convolution << <numBlocks, threadsPerBlock, widthMask* heightMask * sizeof(char) >> > (inImage, outImage, width, height, inMask, widthMask, heightMask);
-		err = cudaGetLastError();
-		if (err != cudaSuccess)
-		{
-			std::cerr << "Error: " << cudaGetErrorString(err) << std::endl;
-			return result;
-		}
+		gpuErrchk(cudaGetLastError());
 
-		// Copie des données du GPU vers le CPU
-		err = cudaMemcpy(result.data(), outImage, width * height * sizeof(unsigned char), cudaMemcpyDeviceToHost);
-		if (err != cudaSuccess)
-		{
-			std::cerr << "Error: " << cudaGetErrorString(err) << std::endl;
-			return result;
-		}
+		// Copie des donnÃ©es du GPU vers le CPU
+		gpuErrchk(cudaMemcpy(result.data(), outImage, width * height * sizeof(unsigned char), cudaMemcpyDeviceToHost));
 
-		// Libération de la mémoire
+		// LibÃ©ration de la mÃ©moire
 		cudaFree(inImage);
 		cudaFree(outImage);
 		cudaFree(inMask);
@@ -191,13 +154,13 @@ namespace {
 	{
 		std::vector<int> result(image.size(), 0);
 
-		// Vérifie que la taille de l'image est un multiple de la largeur de l'image
+		// VÃ©rifie que la taille de l'image est un multiple de la largeur de l'image
 		if (image.size() % width != 0)
 		{
 			std::cerr << "Error: image width is not a multiple of the image size" << std::endl;
 			return result;
 		}
-		// Vérifie que la taille du masque est un multiple de la largeur du masque
+		// VÃ©rifie que la taille du masque est un multiple de la largeur du masque
 		if (mask.size() % widthMask != 0)
 		{
 			std::cerr << "Error: mask width is not a multiple of the mask size" << std::endl;
@@ -206,78 +169,36 @@ namespace {
 
 		int height = image.size() / width;
 		int heightMask = mask.size() / widthMask;
-		cudaError_t err;
 
-		// Allocation de la mémoire sur le GPU
+		// Allocation de la mÃ©moire sur le GPU
 		int* inImage;
-		err = cudaMalloc(&inImage, width * height * sizeof(int));
-		if (err != cudaSuccess)
-		{
-			std::cerr << "Error: " << cudaGetErrorString(err) << std::endl;
-			return result;
-		}
+		gpuErrchk(cudaMalloc(&inImage, width * height * sizeof(int)));
 
 		int* outImage;
-		err = cudaMalloc(&outImage, width * height * sizeof(int));
-		if (err != cudaSuccess)
-		{
-			std::cerr << "Error: " << cudaGetErrorString(err) << std::endl;
-			return result;
-		}
+		gpuErrchk(cudaMalloc(&outImage, width * height * sizeof(int)));
 
-		// Initialisation de la mémoire sur le GPU à 0
-		err = cudaMemset(outImage, (int)0, width * height * sizeof(int));
-		if (err != cudaSuccess)
-		{
-			std::cerr << "Error: " << cudaGetErrorString(err) << std::endl;
-			return result;
-		}
+		// Initialisation de la mÃ©moire sur le GPU Ã  0
+		gpuErrchk(cudaMemset(outImage, (int)0, width * height * sizeof(int)));
 
 		int* inMask;
-		err = cudaMalloc(&inMask, widthMask * heightMask * sizeof(char));
-		if (err != cudaSuccess)
-		{
-			std::cerr << "Error: " << cudaGetErrorString(err) << std::endl;
-			return result;
-		}
+		gpuErrchk(cudaMalloc(&inMask, widthMask * heightMask * sizeof(int)));
 
-		// Copie des données sur le GPU
-		err = cudaMemcpy(inImage, image.data(), width * height * sizeof(int), cudaMemcpyHostToDevice);
-		if (err != cudaSuccess)
-		{
-			std::cerr << "Error: " << cudaGetErrorString(err) << std::endl;
-			return result;
-		}
+		// Copie des donnÃ©es sur le GPU
+		gpuErrchk(cudaMemcpy(inImage, image.data(), width * height * sizeof(int), cudaMemcpyHostToDevice));
 
-		err = cudaMemcpy(inMask, mask.data(), widthMask * heightMask * sizeof(int), cudaMemcpyHostToDevice);
-		if (err != cudaSuccess)
-		{
-			std::cerr << "Error: " << cudaGetErrorString(err) << std::endl;
-			return result;
-		}
+		gpuErrchk(cudaMemcpy(inMask, mask.data(), widthMask * heightMask * sizeof(int), cudaMemcpyHostToDevice));
 
-
-		// Définition de la taille des blocs et de la grille
-		dim3 threadsPerBlock(16, 16);
+		// DÃ©finition de la taille des blocs et de la grille
+		dim3 threadsPerBlock(512);
 		dim3 numBlocks((width + threadsPerBlock.x - 1) / threadsPerBlock.x, (height + threadsPerBlock.y - 1) / threadsPerBlock.y);
-		// Appel du kernel convolution avec la taille du masque en mémoire partagée
+		// Appel du kernel convolution avec la taille du masque en mÃ©moire partagÃ©e
 		convolution << <numBlocks, threadsPerBlock, widthMask* heightMask * sizeof(int) >> > (inImage, outImage, width, height, inMask, widthMask, heightMask);
-		err = cudaGetLastError();
-		if (err != cudaSuccess)
-		{
-			std::cerr << "Error: " << cudaGetErrorString(err) << std::endl;
-			return result;
-		}
+		gpuErrchk(cudaGetLastError());
 
-		// Copie des données du GPU vers le CPU
-		err = cudaMemcpy(result.data(), outImage, width * height * sizeof(unsigned int), cudaMemcpyDeviceToHost);
-		if (err != cudaSuccess)
-		{
-			std::cerr << "Error: " << cudaGetErrorString(err) << std::endl;
-			return result;
-		}
+		// Copie des donnÃ©es du GPU vers le CPU
+		gpuErrchk(cudaMemcpy(result.data(), outImage, width * height * sizeof(unsigned int), cudaMemcpyDeviceToHost));
 
-		// Libération de la mémoire
+		// LibÃ©ration de la mÃ©moire
 		cudaFree(inImage);
 		cudaFree(outImage);
 		cudaFree(inMask);
@@ -296,13 +217,13 @@ void runOnGPU_GREY()
 	std::cin >> imageHeight;
 
 	std::vector<unsigned char> image;
-	// Initialisation de l'image à i % 255 pour les 3 canaux RGB
+	// Initialisation de l'image Ã  i % 255 pour les 3 canaux RGB
 	for (int i = 0; i < imageWidth * imageHeight; i++)
 	{
 		image.push_back(i);
 	}
 
-	// Affichage de l'image le premier carré de 5x5 pixels de l'image
+	// Affichage de l'image le premier carrÃ© de 5x5 pixels de l'image
 	std::cout << "Image before convolution: " << std::endl;
 	for (int i = 0; i < 10; i++)
 	{
@@ -325,7 +246,7 @@ void runOnGPU_GREY()
 	std::vector<unsigned char> result = convolution(image, imageWidth, mask, maskWidth);
 	std::cout << "Result size: " << result.size() << std::endl;
 
-	// Affichage de l'image le premier carré de 5x5 pixels de l'image
+	// Affichage de l'image le premier carrÃ© de 5x5 pixels de l'image
 	std::cout << "Image after convolution: " << std::endl;
 	for (int i = 0; i < 10; i++)
 	{
@@ -346,13 +267,13 @@ void runOnGPU_RGB()
 	std::cin >> imageHeight;
 
 	std::vector<int> image;
-	// Initialisation de l'image à i % 255 pour les 3 canaux RGB
+	// Initialisation de l'image Ã  i % 255 pour les 3 canaux RGB
 	for (int i = 0; i < imageWidth * imageHeight; i++)
 	{
 		image.push_back((i << 24) | (i << 16) | (i << 8));
 	}
 
-	// Affichage de l'image le premier carré de 5x5 pixels canal par canal
+	// Affichage de l'image le premier carrÃ© de 5x5 pixels canal par canal
 	std::cout << "Image after convolution: " << std::endl;
 	for (int i = 0; i < 5; i++)
 	{
@@ -368,7 +289,7 @@ void runOnGPU_RGB()
 	// Masque
 	maskWidth = 3;
 	std::vector<int> mask = {
-		1, 0, 0,
+		(1 << 24) | (1 << 16) | (1 << 8), 0, 0,
 		0, 0, 0,
 		0, 0, 0
 	};
@@ -377,7 +298,7 @@ void runOnGPU_RGB()
 	std::vector<int> result = convolution(image, imageWidth, mask, maskWidth);
 	std::cout << "Result size: " << result.size() << std::endl;
 
-	// Affichage de l'image le premier carré de 5x5 pixels canal par canal
+	// Affichage de l'image le premier carrÃ© de 5x5 pixels canal par canal
 	std::cout << "Image after convolution: " << std::endl;
 	for (int i = 0; i < 5; i++)
 	{
