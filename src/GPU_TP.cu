@@ -37,6 +37,7 @@ namespace GPU_TP {
 
 		if (idX < ImgWidth && idY < ImgHeight)
 		{
+			int value = 0;
 			for (int i = 0; i < MaskHeight; i++)
 			{
 				for (int j = 0; j < MaskWidth; j++)
@@ -46,10 +47,11 @@ namespace GPU_TP {
 					int idImg = (idY + i - shift) * ImgWidth + (idX + j - shift);
 					if ((idY + i - shift) >= 0 && (idY + i - shift) < ImgHeight && (idX + j - shift) >= 0 && (idX + j - shift) < ImgWidth)
 					{
-						OutImg[idGlobal] += InImg[idImg] * sharedMask[idMask];
+						value += InImg[idImg] * sharedMask[idMask];
 					}
 				}
 			}
+			OutImg[idGlobal] = (unsigned char)(value / (MaskWidth * MaskHeight));
 		}
 	}
 
@@ -89,7 +91,7 @@ namespace GPU_TP {
 		if (idX < ImgWidth && idY < ImgHeight)
 		{
 			// Initialisation de la valeur du pixel
-			unsigned char R = 0, G = 0, B = 0;
+			int R = 0, G = 0, B = 0;
 			// Parcours du masque
 			for (int i = 0; i < MaskHeight; i++)
 			{
@@ -100,9 +102,9 @@ namespace GPU_TP {
 					int idImg = (idY + i - shift) * ImgWidth + (idX + j - shift);
 					if ((idY + i - shift) >= 0 && (idY + i - shift) < ImgHeight && (idX + j - shift) >= 0 && (idX + j - shift) < ImgWidth)
 					{
-						unsigned char maskR = (sharedMaskRgb[idMask] >> 24) & 0xFF;
-						unsigned char maskG = (sharedMaskRgb[idMask] >> 16) & 0xFF;
-						unsigned char maskB = (sharedMaskRgb[idMask] >> 8) & 0xFF;
+						char maskR = (sharedMaskRgb[idMask] >> 24) & 0xFF;
+						char maskG = (sharedMaskRgb[idMask] >> 16) & 0xFF;
+						char maskB = (sharedMaskRgb[idMask] >> 8) & 0xFF;
 
 						R += ((InImg[idImg] >> 24) & 0xFF) * maskR;
 						G += ((InImg[idImg] >> 16) & 0xFF) * maskG;
@@ -111,7 +113,10 @@ namespace GPU_TP {
 				}
 			}
 			// Ajout de la valeur du pixel dans le résultat
-			OutImg[idGlobal] = (R << 24) | (G << 16) | (B << 8);
+			OutImg[idGlobal] = =
+					  ((unsigned char) (R / (MaskWidth * MaskHeight)) << 24)
+					| ((unsigned char) (G / (MaskWidth * MaskHeight)) << 16)
+					| ((unsigned char) (B / (MaskWidth * MaskHeight)) << 8);
 		}
 	}
 
@@ -259,7 +264,7 @@ void runOnGPU_GREY()
 	// Masque
 	maskWidth = 3;
 	std::vector<char> mask = {
-		1, 0, 0,
+		9, 0, 0,
 		0, 0, 0,
 		0, 0, 0
 	};
@@ -311,7 +316,7 @@ void runOnGPU_RGB()
 	// Masque
 	maskWidth = 3;
 	std::vector<int> mask = {
-		(1 << 24) | (1 << 16) | (1 << 8), 0, 0,
+		(9 << 24) | (9 << 16) | (9 << 8), 0, 0,
 		0, 0, 0,
 		0, 0, 0
 	};

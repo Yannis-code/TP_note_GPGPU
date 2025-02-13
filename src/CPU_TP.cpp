@@ -43,7 +43,7 @@ namespace CPU_TP {
 					}
 				}
 				// Ajout de la valeur du pixel dans le résultat
-				result.push_back(value);
+				result.push_back((unsigned char)(value / (heightMask * widthMask)));
 			}
 		}
 		return result;
@@ -74,7 +74,7 @@ namespace CPU_TP {
 			for (int j = 0; j < width; j++)
 			{
 				// Initialisation de la valeur du pixel
-				unsigned char R = 0, G = 0, B = 0;
+				int R = 0, G = 0, B = 0;
 				// Parcours du masque
 				for (int k = 0; k < heightMask; k++)
 				{
@@ -85,9 +85,9 @@ namespace CPU_TP {
 						int idImg = (i + k - shift) * width + (j + l - shift);
 						if ((i + k - shift) >= 0 && (i + k - shift) < height && (j + l - shift) >= 0 && (j + l - shift) < width)
 						{
-							unsigned char maskR = (mask[idMask] >> 24) & 0xFF;
-							unsigned char maskG = (mask[idMask] >> 16) & 0xFF;
-							unsigned char maskB = (mask[idMask] >> 8) & 0xFF;
+							char maskR = (mask[idMask] >> 24) & 0xFF;
+							char maskG = (mask[idMask] >> 16) & 0xFF;
+							char maskB = (mask[idMask] >> 8) & 0xFF;
 
 							R += ((image[idImg] >> 24) & 0xFF) * maskR;
 							G += ((image[idImg] >> 16) & 0xFF) * maskG;
@@ -95,7 +95,10 @@ namespace CPU_TP {
 						}
 					}
 				}
-				int value = (R << 24) | (G << 16) | (B << 8);
+				int value =
+					  ((unsigned char) (R / (widthMask * heightMask)) << 24)
+					| ((unsigned char) (G / (widthMask * heightMask)) << 16)
+					| ((unsigned char) (B / (widthMask * heightMask)) << 8);
 				// Ajout de la valeur du pixel dans le résultat
 				result.push_back(value);
 			}
@@ -133,7 +136,7 @@ void runOnCPU_GREY()
 	// Masque
 	maskWidth = 3;
 	std::vector<char> mask = {
-		1, 0, 0,
+		9, 0, 0,
 		0, 0, 0,
 		0, 0, 0
 	};
@@ -185,7 +188,7 @@ void runOnCPU_RGB()
 	// Masque
 	maskWidth = 3;
 	std::vector<int> mask = {
-		(1 << 24) | (1 << 16) | (1 << 8), 0, 0,
+		(9 << 24) | (9 << 16) | (9 << 8), 0, 0,
 		0, 0, 0,
 		0, 0, 0
 	};

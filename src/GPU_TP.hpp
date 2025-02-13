@@ -1,7 +1,7 @@
 
 #pragma once
 
-#include "CudaHelper.h"
+#include "CudaHelper.hpp"
 
 #include <iostream>
 #include <iomanip>
