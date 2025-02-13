@@ -113,7 +113,7 @@ namespace GPU_TP {
 				}
 			}
 			// Ajout de la valeur du pixel dans le résultat
-			OutImg[idGlobal] = =
+			OutImg[idGlobal] =
 					  ((unsigned char) (R / (MaskWidth * MaskHeight)) << 24)
 					| ((unsigned char) (G / (MaskWidth * MaskHeight)) << 16)
 					| ((unsigned char) (B / (MaskWidth * MaskHeight)) << 8);
