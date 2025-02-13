@@ -160,10 +160,10 @@ namespace GPU_TP {
 
 
 		// Définition de la taille des blocs et de la grille
-		dim3 threadsPerBlock(16, 16);
-		dim3 numBlocks((width + threadsPerBlock.x - 1) / threadsPerBlock.x, (height + threadsPerBlock.y - 1) / threadsPerBlock.y);
+		dim3 dimBloc( 512 );
+		dim3 dimGrille( (width * height) / dimBloc.x + ( (width * height) % dimBloc.x != 0 ) );
 		// Appel du kernel convolution avec la taille du masque en mémoire partagée
-		convolution << <numBlocks, threadsPerBlock, widthMask* heightMask * sizeof(char) >> > (inImage, outImage, width, height, inMask, widthMask, heightMask);
+		convolution << <dimGrille, dimBloc, widthMask* heightMask * sizeof(char) >> > (inImage, outImage, width, height, inMask, widthMask, heightMask);
 		gpuErrchk(cudaGetLastError());
 
 		// Copie des données du GPU vers le CPU
@@ -216,10 +216,10 @@ namespace GPU_TP {
 		gpuErrchk(cudaMemcpy(inMask, mask.data(), widthMask * heightMask * sizeof(int), cudaMemcpyHostToDevice));
 
 		// Définition de la taille des blocs et de la grille
-		dim3 threadsPerBlock(512);
-		dim3 numBlocks((width + threadsPerBlock.x - 1) / threadsPerBlock.x, (height + threadsPerBlock.y - 1) / threadsPerBlock.y);
+		dim3 dimBloc( 512 );
+		dim3 dimGrille( (width * height) / dimBloc.x + ( (width * height) % dimBloc.x != 0 ) );
 		// Appel du kernel convolution avec la taille du masque en mémoire partagée
-		convolution << <numBlocks, threadsPerBlock, widthMask* heightMask * sizeof(int) >> > (inImage, outImage, width, height, inMask, widthMask, heightMask);
+		convolution << <dimGrille, dimBloc, widthMask* heightMask * sizeof(int) >> > (inImage, outImage, width, height, inMask, widthMask, heightMask);
 		gpuErrchk(cudaGetLastError());
 
 		// Copie des données du GPU vers le CPU
